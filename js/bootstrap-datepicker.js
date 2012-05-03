@@ -26,7 +26,7 @@
 		this.element = $(element);
 		this.language = options.language||this.element.data('date-language')||"en";
 		this.language = this.language in dates ? this.language : "en";
-		this.format = DPGlobal.parseFormat(options.format||this.element.data('date-format')||'mm/dd/yyyy');
+		this.format = DPGlobal.parseFormat(options.format||this.element.data('date-format')||'mm/yyyy');
 		this.picker = $(DPGlobal.template)
 							.appendTo('body')
 							.on({
@@ -71,12 +71,8 @@
 				break;
 			case 1:
 			case 'year':
-				this.viewMode = this.startViewMode = 1;
-				break;
-			case 0:
-			case 'month':
 			default:
-				this.viewMode = this.startViewMode = 0;
+				this.viewMode = this.startViewMode = 1;
 				break;
 		}
 
@@ -368,56 +364,39 @@
 						break;
 					case 'span':
 						if (!target.is('.disabled')) {
-							if (target.is('.month')) {
-								var month = target.parent().find('span').index(target);
-								this.viewDate.setMonth(month);
-							} else {
+							if (!target.is('.month')) {
 								var year = parseInt(target.text(), 10)||0;
 								this.viewDate.setFullYear(year);
+								this.showMode(-1);
+								this.fill();
 							}
-							this.showMode(-1);
-							this.fill();
-						}
-						break;
-					case 'td':
-						if (target.is('.day') && !target.is('.disabled')){
-							var day = parseInt(target.text(), 10)||1;
-							var year = this.viewDate.getFullYear(),
-								month = this.viewDate.getMonth();
-							if (target.is('.old')) {
-								if (month == 0) {
-									month = 11;
-									year -= 1;
-								} else {
-									month -= 1;
+							else {
+								var month = target.parent().find('span').index(target);
+								var year = this.viewDate.getFullYear();
+
+								this.viewDate.setMonth(month);
+								this.date = new Date(year, month, 1,0,0,0,0);
+								this.viewDate = new Date(year, month, 1,0,0,0,0);
+
+								this.fill();
+								this.setValue();
+								this.element.trigger({
+									type: 'changeDate',
+									date: this.date
+								});
+								var element;
+								if (this.isInput) {
+									element = this.element;
+								} else if (this.component){
+									element = this.element.find('input');
 								}
-							} else if (target.is('.new')) {
-								if (month == 11) {
-									month = 0;
-									year += 1;
-								} else {
-									month += 1;
+								if (element) {
+									element.change();
+									if (this.autoclose) {
+										element.blur();
+									}
 								}
-							}
-							this.date = new Date(year, month, day,0,0,0,0);
-							this.viewDate = new Date(year, month, day,0,0,0,0);
-							this.fill();
-							this.setValue();
-							this.element.trigger({
-								type: 'changeDate',
-								date: this.date
-							});
-							var element;
-							if (this.isInput) {
-								element = this.element;
-							} else if (this.component){
-								element = this.element.find('input');
-							}
-							if (element) {
-								element.change();
-								if (this.autoclose) {
-									element.blur();
-								}
+
 							}
 						}
 						break;
@@ -547,7 +526,7 @@
 
 		showMode: function(dir) {
 			if (dir) {
-				this.viewMode = Math.max(0, Math.min(2, this.viewMode + dir));
+				this.viewMode = Math.max(1, Math.min(2, this.viewMode + dir));
 			}
 			this.picker.find('>div').hide().filter('.datepicker-'+DPGlobal.modes[this.viewMode].clsName).show();
 			this.updateNavArrows();
@@ -719,12 +698,6 @@
 		contTemplate: '<tbody><tr><td colspan="7"></td></tr></tbody>'
 	};
 	DPGlobal.template = '<div class="datepicker dropdown-menu">'+
-							'<div class="datepicker-days">'+
-								'<table class=" table-condensed">'+
-									DPGlobal.headTemplate+
-									'<tbody></tbody>'+
-								'</table>'+
-							'</div>'+
 							'<div class="datepicker-months">'+
 								'<table class="table-condensed">'+
 									DPGlobal.headTemplate+
